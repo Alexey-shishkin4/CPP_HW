@@ -5,31 +5,38 @@
 #include <random>
 #include <set>
 #include <vector>
+#include <unordered_map>
 
 
 class FibonacciHeap {
   public:
     struct Node {
       int key;
-      int degree = 0;
-      bool mark = false;
+      int degree;
+      bool mark;
 
-      Node* parent = nullptr;
-      Node* child = nullptr;
+      Node* parent;
+      Node* child;
 
-      Node* left = this;
-      Node* right = this;
+      Node* left;
+      Node* right;
 
-      explicit Node(int k) : key(k) {}
+      explicit Node(int k) : key(k), degree(0), mark(false),
+                             parent(nullptr), child(nullptr),
+                             left(this), right(this) {}
     };
 
-  FibonacciHeap() = default;
+  FibonacciHeap() : minNode(nullptr), n(0) {}
 
-  FibonacciHeap(const FibonacciHeap&) = delete;
-  FibonacciHeap& operator=(const FibonacciHeap&) = delete;
+  // deep copy
+  FibonacciHeap(const FibonacciHeap& other) : minNode(nullptr), n(0) {
+    copyFrom(other);
+  };
 
-  FibonacciHeap(FibonacciHeap&&) = delete;
-  FibonacciHeap& operator=(FibonacciHeap&&) = delete;
+  FibonacciHeap& operator=(FibonacciHeap other) {
+    swap(other);
+    return *this;
+  };
 
   ~FibonacciHeap(){
     clear();
@@ -132,6 +139,11 @@ class FibonacciHeap {
 private:
   Node* minNode = nullptr;
   size_t n = 0;
+
+  void swap(FibonacciHeap& other) noexcept {
+    std::swap(minNode, other.minNode);
+    std::swap(n, other.n);
+  }
 
   void insertIntoRootList(Node* x) {
     x->parent = nullptr;
@@ -252,9 +264,6 @@ private:
 
     x->parent = nullptr;
     x->mark = false;
-
-    x->parent = nullptr;
-    x->mark = false;
     insertIntoRootList(x);
   }
 
@@ -271,7 +280,7 @@ private:
   }
 
 
-  void collectAllNodes(std::vector<Node*>& out) {
+  void collectAllNodes(std::vector<Node*>& out) const {
     std::set<Node*> vis;
 
     std::vector<Node*> stack;
@@ -302,5 +311,39 @@ private:
         } while (c != x->child);
       }
     }
+  }
+
+  void copyFrom(const FibonacciHeap& other) {
+    if (!other.minNode) {
+      minNode = nullptr;
+      n = 0;
+      return;
+    }
+
+    std::vector<Node*> oldAll;
+    other.collectAllNodes(oldAll);
+
+    std::unordered_map<const Node*, Node*> mp;
+    mp.reserve(oldAll.size());
+
+    for (Node* old : oldAll) {
+      Node* neu = new Node(old->key);
+      neu->degree = old->degree;
+      neu->mark = old->mark;
+      mp[old] = neu;
+    }
+
+    for (Node* old: oldAll) {
+      Node* neu = mp[old];
+
+      neu->parent = old->parent ? mp[old->parent] : nullptr;
+      neu->child  = old->child ? mp[old->child] : nullptr;
+
+      neu->left   = old->left ? mp[old->left] : neu;
+      neu->right  = old->right ? mp[old->right] : neu;
+    }
+
+    minNode = mp.at(other.minNode);
+    n = other.n;
   }
 };
