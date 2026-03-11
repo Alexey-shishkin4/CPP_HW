@@ -163,6 +163,91 @@ static void test_assignment_independent_after_original_changes() {
     assert(h2.getMin() == 10);
 }
 
+void test_move_ctor_basic() {
+  FibonacciHeap h1;
+  auto* n1 = h1.insert(10);
+  auto* n2 = h1.insert(3);
+  auto* n3 = h1.insert(7);
+
+  assert(h1.size() == 3);
+  assert(h1.getMin() == 3);
+
+  FibonacciHeap h2(std::move(h1));
+
+  assert(h1.isEmpty());
+  assert(h1.size() == 0);
+
+  assert(!h2.isEmpty());
+  assert(h2.size() == 3);
+  assert(h2.getMin() == 3);
+
+  assert(h2.extractMin() == 3);
+  assert(h2.extractMin() == 7);
+  assert(h2.extractMin() == 10);
+  assert(h2.isEmpty());
+}
+
+void test_move_assign_basic() {
+  FibonacciHeap h1;
+  h1.insert(5);
+  h1.insert(1);
+  h1.insert(9);
+
+  FibonacciHeap h2;
+  h2.insert(100);
+  h2.insert(200);
+
+  assert(h1.size() == 3);
+  assert(h2.size() == 2);
+
+  h2 = std::move(h1);
+
+  assert(h1.isEmpty());
+  assert(h1.size() == 0);
+
+  assert(!h2.isEmpty());
+  assert(h2.size() == 3);
+  assert(h2.getMin() == 1);
+
+  assert(h2.extractMin() == 1);
+  assert(h2.extractMin() == 5);
+  assert(h2.extractMin() == 9);
+  assert(h2.isEmpty());
+}
+
+void test_move_self_assign() {
+  FibonacciHeap h;
+  h.insert(4);
+  h.insert(2);
+
+  FibonacciHeap& href = h;
+  href = std::move(h);
+
+  assert(!href.isEmpty());
+  assert(href.size() == 2);
+  assert(href.getMin() == 2);
+}
+
+void test_move_chain() {
+  FibonacciHeap h1;
+  for (int i = 0; i < 100; ++i) h1.insert(i);
+
+  FibonacciHeap h2(std::move(h1));
+  FibonacciHeap h3;
+  h3 = std::move(h2);
+
+  assert(h1.isEmpty());
+  assert(h2.isEmpty());
+  assert(h3.size() == 100);
+  assert(h3.getMin() == 0);
+
+  for (int i = 0; i < 100; ++i) {
+    int x = h3.extractMin();
+    assert(x == i);
+  }
+  assert(h3.isEmpty());
+}
+
 
 int main() {
     test_basic_min_extract();
@@ -174,6 +259,11 @@ int main() {
     test_copy_assignment_basic();
     test_self_assignment();
     test_assignment_independent_after_original_changes();
+
+    test_move_ctor_basic();
+    test_move_assign_basic();
+    test_move_self_assign();
+    test_move_chain();
 
     std::cout << "All tests OK\n";
     return 0;

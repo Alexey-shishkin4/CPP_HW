@@ -9,7 +9,7 @@
 
 
 class FibonacciHeap {
-  public:
+public:
     struct Node {
       int key;
       int degree;
@@ -28,17 +28,32 @@ class FibonacciHeap {
 
   FibonacciHeap() : minNode(nullptr), n(0) {}
 
-  // deep copy
   FibonacciHeap(const FibonacciHeap& other) : minNode(nullptr), n(0) {
     copyFrom(other);
-  };
+  }
 
-  FibonacciHeap& operator=(FibonacciHeap other) {
+  FibonacciHeap(FibonacciHeap&& other) noexcept
+    : minNode(nullptr), n(0) {
     swap(other);
-    return *this;
-  };
+  }
 
-  ~FibonacciHeap(){
+  FibonacciHeap& operator=(const FibonacciHeap& other) {
+    if (this != &other) {
+      FibonacciHeap tmp(other);
+      swap(tmp);
+    }
+    return *this;
+  }
+
+  FibonacciHeap& operator=(FibonacciHeap&& other) noexcept {
+    if (this != &other) {
+        clear();
+        swap(other);
+    }
+    return *this;
+  }
+
+  ~FibonacciHeap() {
     clear();
   }
 
@@ -110,7 +125,6 @@ class FibonacciHeap {
       minNode = x;
     }
   }
-
 
   void erase(Node* x) {
     decreaseKey(x, std::numeric_limits<int>::min());
