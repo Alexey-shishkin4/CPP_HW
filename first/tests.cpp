@@ -5,7 +5,7 @@
 #include <set>
 #include <string>
 #include <vector>
-#include "fib_heap.hpp"
+#include "fib_heap1.hpp"
 
 static void test_basic_min_extract() {
     FibonacciHeap<int> h;
@@ -286,6 +286,97 @@ static void test_decrease_key_with_custom_comparator() {
     assert(h.extractMin() == 100);
 }
 
+static void test_range_based_for_sum() {
+    FibonacciHeap<int> h;
+    h.insert(10);
+    h.insert(3);
+    h.insert(7);
+    h.insert(1);
+
+    int sum = 0;
+    int count = 0;
+    for (int x : h) {
+        sum += x;
+        ++count;
+    }
+
+    assert(count == 4);
+    assert(sum == 21);
+}
+
+static void test_range_based_for_const_heap() {
+    FibonacciHeap<int> h;
+    h.insert(4);
+    h.insert(9);
+    h.insert(2);
+
+    const FibonacciHeap<int>& ch = h;
+
+    int sum = 0;
+    int count = 0;
+    for (const int& x : ch) {
+        sum += x;
+        ++count;
+    }
+
+    assert(count == 3);
+    assert(sum == 15);
+}
+
+static void test_range_based_for_multiset_equivalence() {
+    FibonacciHeap<int> h;
+    std::multiset<int> expected = {5, 1, 8, 1, 9, 3};
+
+    for (int x : expected) {
+        h.insert(x);
+    }
+
+    std::multiset<int> actual;
+    for (int x : h) {
+        actual.insert(x);
+    }
+
+    assert(actual == expected);
+}
+
+static void test_iterator_after_copy() {
+    FibonacciHeap<int> h;
+    h.insert(5);
+    h.insert(1);
+    h.insert(8);
+
+    FibonacciHeap<int> c(h);
+
+    std::multiset<int> vals;
+    for (int x : c) {
+        vals.insert(x);
+    }
+
+    assert(vals.size() == 3);
+    assert(vals.count(1) == 1);
+    assert(vals.count(5) == 1);
+    assert(vals.count(8) == 1);
+}
+
+static void test_iterator_after_move() {
+    FibonacciHeap<int> h;
+    h.insert(11);
+    h.insert(6);
+    h.insert(14);
+
+    FibonacciHeap<int> moved(std::move(h));
+
+    int count = 0;
+    int sum = 0;
+    for (int x : moved) {
+        ++count;
+        sum += x;
+    }
+
+    assert(count == 3);
+    assert(sum == 31);
+}
+
 int main() {
     test_basic_min_extract();
     test_decrease_key_cut();
@@ -306,7 +397,12 @@ int main() {
     test_custom_comparator_max_heap_behavior();
     test_decrease_key_with_custom_comparator();
 
+    test_range_based_for_sum();
+    test_range_based_for_const_heap();
+    test_range_based_for_multiset_equivalence();
+    test_iterator_after_copy();
+    test_iterator_after_move();
+
     std::cout << "All tests OK\n";
     return 0;
 }
-
