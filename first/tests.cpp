@@ -4,32 +4,42 @@
 #include <random>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
-#include "fib_heap1.hpp"
+
+#include "fib_heap.hpp"
 
 static void test_basic_min_extract() {
     FibonacciHeap<int> h;
+
     auto* a = h.insert(10);
     (void)a;
+
     h.insert(3);
     h.insert(7);
 
     assert(h.getMin() == 3);
+
     assert(h.extractMin() == 3);
     assert(h.getMin() == 7);
+
     assert(h.extractMin() == 7);
     assert(h.extractMin() == 10);
+
     assert(h.isEmpty());
 }
 
 static void test_decrease_key_cut() {
     FibonacciHeap<int> h;
+
     auto* x = h.insert(100);
     h.insert(50);
     h.insert(70);
 
     assert(h.getMin() == 50);
+
     h.decreaseKey(x, 1);
+
     assert(h.getMin() == 1);
     assert(h.extractMin() == 1);
 }
@@ -45,40 +55,59 @@ static void test_against_multiset_random() {
 
     for (int i = 0; i < 2000; ++i) {
         int v = distV(rng);
+
         handles.push_back(h.insert(v));
         ms.insert(v);
+
         assert(h.getMin() == *ms.begin());
     }
 
-    std::uniform_int_distribution<int> distI(0, static_cast<int>(handles.size()) - 1);
+    std::uniform_int_distribution<int> distI(
+        0,
+        static_cast<int>(handles.size()) - 1
+    );
+
     for (int t = 0; t < 2000; ++t) {
         int idx = distI(rng);
+
         auto* p = handles[idx];
-        if (!p) continue;
+
+        if (!p) {
+            continue;
+        }
 
         int newKey = distV(rng);
-        if (newKey > p->key) newKey = p->key;
+
+        if (newKey > p->key) {
+            newKey = p->key;
+        }
 
         auto it = ms.find(p->key);
         assert(it != ms.end());
+
         ms.erase(it);
         ms.insert(newKey);
 
         h.decreaseKey(p, newKey);
+
         assert(h.getMin() == *ms.begin());
     }
 
     while (!ms.empty()) {
         int a = h.extractMin();
         int b = *ms.begin();
+
         ms.erase(ms.begin());
+
         assert(a == b);
     }
+
     assert(h.isEmpty());
 }
 
 static void test_copy_ctor_same_order() {
     FibonacciHeap<int> h;
+
     h.insert(10);
     h.insert(3);
     h.insert(7);
@@ -90,13 +119,16 @@ static void test_copy_ctor_same_order() {
     while (!h.isEmpty()) {
         int a = h.extractMin();
         int b = c.extractMin();
+
         assert(a == b);
     }
+
     assert(c.isEmpty());
 }
 
 static void test_copy_ctor_independent_after_ops() {
     FibonacciHeap<int> h;
+
     auto* p = h.insert(100);
     h.insert(50);
     h.insert(70);
@@ -111,11 +143,13 @@ static void test_copy_ctor_independent_after_ops() {
 
 static void test_copy_assignment_basic() {
     FibonacciHeap<int> h1;
+
     h1.insert(9);
     h1.insert(2);
     h1.insert(6);
 
     FibonacciHeap<int> h2;
+
     h2.insert(100);
     h2.insert(200);
 
@@ -124,11 +158,13 @@ static void test_copy_assignment_basic() {
     while (!h1.isEmpty()) {
         assert(h1.extractMin() == h2.extractMin());
     }
+
     assert(h2.isEmpty());
 }
 
 static void test_self_assignment() {
     FibonacciHeap<int> h;
+
     h.insert(4);
     h.insert(1);
     h.insert(3);
@@ -144,13 +180,14 @@ static void test_self_assignment() {
 
 static void test_assignment_independent_after_original_changes() {
     FibonacciHeap<int> h1;
+
     auto* p = h1.insert(10);
     h1.insert(20);
     h1.insert(30);
 
     FibonacciHeap<int> h2;
-    h2.insert(999);
 
+    h2.insert(999);
     h2 = h1;
 
     h1.decreaseKey(p, 1);
@@ -161,6 +198,7 @@ static void test_assignment_independent_after_original_changes() {
 
 static void test_move_ctor_basic() {
     FibonacciHeap<int> h1;
+
     h1.insert(10);
     h1.insert(3);
     h1.insert(7);
@@ -180,16 +218,19 @@ static void test_move_ctor_basic() {
     assert(h2.extractMin() == 3);
     assert(h2.extractMin() == 7);
     assert(h2.extractMin() == 10);
+
     assert(h2.isEmpty());
 }
 
 static void test_move_assign_basic() {
     FibonacciHeap<int> h1;
+
     h1.insert(5);
     h1.insert(1);
     h1.insert(9);
 
     FibonacciHeap<int> h2;
+
     h2.insert(100);
     h2.insert(200);
 
@@ -208,15 +249,18 @@ static void test_move_assign_basic() {
     assert(h2.extractMin() == 1);
     assert(h2.extractMin() == 5);
     assert(h2.extractMin() == 9);
+
     assert(h2.isEmpty());
 }
 
 static void test_move_self_assign() {
     FibonacciHeap<int> h;
+
     h.insert(4);
     h.insert(2);
 
     FibonacciHeap<int>& href = h;
+
     href = std::move(h);
 
     assert(!href.isEmpty());
@@ -226,55 +270,68 @@ static void test_move_self_assign() {
 
 static void test_move_chain() {
     FibonacciHeap<int> h1;
+
     for (int i = 0; i < 100; ++i) {
         h1.insert(i);
     }
 
     FibonacciHeap<int> h2(std::move(h1));
+
     FibonacciHeap<int> h3;
     h3 = std::move(h2);
 
     assert(h1.isEmpty());
     assert(h2.isEmpty());
+
     assert(h3.size() == 100);
     assert(h3.getMin() == 0);
 
     for (int i = 0; i < 100; ++i) {
         int x = h3.extractMin();
+
         assert(x == i);
     }
+
     assert(h3.isEmpty());
 }
 
 static void test_string_keys() {
     FibonacciHeap<std::string> h;
+
     h.insert("pear");
     h.insert("apple");
     h.insert("banana");
 
     assert(h.getMin() == "apple");
+
     assert(h.extractMin() == "apple");
     assert(h.extractMin() == "banana");
     assert(h.extractMin() == "pear");
+
     assert(h.isEmpty());
 }
 
 static void test_custom_comparator_max_heap_behavior() {
     FibonacciHeap<int, std::greater<int>> h;
+
     h.insert(10);
     h.insert(3);
     h.insert(7);
 
     assert(h.getMin() == 10);
+
     assert(h.extractMin() == 10);
     assert(h.extractMin() == 7);
     assert(h.extractMin() == 3);
+
     assert(h.isEmpty());
 }
 
 static void test_decrease_key_with_custom_comparator() {
     FibonacciHeap<int, std::greater<int>> h;
+
     auto* p = h.insert(10);
+
     h.insert(20);
     h.insert(15);
 
@@ -288,6 +345,7 @@ static void test_decrease_key_with_custom_comparator() {
 
 static void test_range_based_for_sum() {
     FibonacciHeap<int> h;
+
     h.insert(10);
     h.insert(3);
     h.insert(7);
@@ -295,6 +353,7 @@ static void test_range_based_for_sum() {
 
     int sum = 0;
     int count = 0;
+
     for (int x : h) {
         sum += x;
         ++count;
@@ -306,6 +365,7 @@ static void test_range_based_for_sum() {
 
 static void test_range_based_for_const_heap() {
     FibonacciHeap<int> h;
+
     h.insert(4);
     h.insert(9);
     h.insert(2);
@@ -314,6 +374,7 @@ static void test_range_based_for_const_heap() {
 
     int sum = 0;
     int count = 0;
+
     for (const int& x : ch) {
         sum += x;
         ++count;
@@ -332,6 +393,7 @@ static void test_range_based_for_multiset_equivalence() {
     }
 
     std::multiset<int> actual;
+
     for (int x : h) {
         actual.insert(x);
     }
@@ -341,6 +403,7 @@ static void test_range_based_for_multiset_equivalence() {
 
 static void test_iterator_after_copy() {
     FibonacciHeap<int> h;
+
     h.insert(5);
     h.insert(1);
     h.insert(8);
@@ -348,6 +411,7 @@ static void test_iterator_after_copy() {
     FibonacciHeap<int> c(h);
 
     std::multiset<int> vals;
+
     for (int x : c) {
         vals.insert(x);
     }
@@ -360,6 +424,7 @@ static void test_iterator_after_copy() {
 
 static void test_iterator_after_move() {
     FibonacciHeap<int> h;
+
     h.insert(11);
     h.insert(6);
     h.insert(14);
@@ -368,6 +433,7 @@ static void test_iterator_after_move() {
 
     int count = 0;
     int sum = 0;
+
     for (int x : moved) {
         ++count;
         sum += x;
@@ -375,6 +441,115 @@ static void test_iterator_after_move() {
 
     assert(count == 3);
     assert(sum == 31);
+}
+
+static void test_two_independent_iterations() {
+    FibonacciHeap<int> h;
+
+    h.insert(1);
+    h.insert(2);
+    h.insert(3);
+
+    std::multiset<int> firstPass;
+    std::multiset<int> secondPass;
+
+    for (int x : h) {
+        firstPass.insert(x);
+    }
+
+    for (int x : h) {
+        secondPass.insert(x);
+    }
+
+    assert(firstPass == std::multiset<int>({1, 2, 3}));
+    assert(secondPass == firstPass);
+}
+
+static void test_nested_iteration() {
+    FibonacciHeap<int> h;
+
+    h.insert(1);
+    h.insert(2);
+    h.insert(3);
+
+    int outerCount = 0;
+    int innerTotalCount = 0;
+
+    for (int x : h) {
+        (void)x;
+
+        ++outerCount;
+
+        int innerCount = 0;
+
+        for (int y : h) {
+            (void)y;
+
+            ++innerCount;
+        }
+
+        assert(innerCount == 3);
+
+        innerTotalCount += innerCount;
+    }
+
+    assert(outerCount == 3);
+    assert(innerTotalCount == 9);
+}
+
+static void test_const_iterator_two_passes() {
+    FibonacciHeap<int> h;
+
+    h.insert(10);
+    h.insert(5);
+    h.insert(7);
+
+    const FibonacciHeap<int>& ch = h;
+
+    int firstSum = 0;
+    int secondSum = 0;
+
+    for (const int& x : ch) {
+        firstSum += x;
+    }
+
+    for (const int& x : ch) {
+        secondSum += x;
+    }
+
+    assert(firstSum == 22);
+    assert(secondSum == 22);
+}
+
+static void test_iterator_snapshot_independent_from_later_insert() {
+    FibonacciHeap<int> h;
+
+    h.insert(1);
+    h.insert(2);
+    h.insert(3);
+
+    auto it = h.begin();
+
+    h.insert(100);
+
+    int count = 0;
+    int sum = 0;
+
+    for (; it != h.end(); ++it) {
+        ++count;
+        sum += *it;
+    }
+
+    assert(count == 3);
+    assert(sum == 6);
+
+    std::multiset<int> allValues;
+
+    for (int x : h) {
+        allValues.insert(x);
+    }
+
+    assert(allValues == std::multiset<int>({1, 2, 3, 100}));
 }
 
 int main() {
@@ -403,6 +578,12 @@ int main() {
     test_iterator_after_copy();
     test_iterator_after_move();
 
+    test_two_independent_iterations();
+    test_nested_iteration();
+    test_const_iterator_two_passes();
+    test_iterator_snapshot_independent_from_later_insert();
+
     std::cout << "All tests OK\n";
+
     return 0;
 }
